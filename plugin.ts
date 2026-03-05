@@ -1228,7 +1228,7 @@ async function* streamFromGateway(options: GatewayOptions, accountId: string): A
     method: 'POST',
     headers,
     body: JSON.stringify({
-      model: 'default',
+      model: 'main',
       messages,
       stream: true,
       user: sessionKey,  // 用于 session 持久化
