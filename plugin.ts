@@ -1193,11 +1193,13 @@ interface GatewayOptions {
   gatewayAuth?: string;  // token 或 password，都用 Bearer 格式
   /** 本地图片文件路径列表，用于 OpenClaw AgentMediaPayload */
   imageLocalPaths?: string[];
+  /** 钉钉发送者用户标识，用于向下游传递 x-forwarded-user */
+  senderId?: string;
   log?: any;
 }
 
 async function* streamFromGateway(options: GatewayOptions, accountId: string): AsyncGenerator<string, void, unknown> {
-  const { userContent, systemPrompts, sessionKey, gatewayAuth, imageLocalPaths, log } = options;
+  const { userContent, systemPrompts, sessionKey, gatewayAuth, imageLocalPaths, senderId, log } = options;
   const rt = getRuntime();
   const gatewayUrl = `http://127.0.0.1:${rt.gateway?.port || 18789}/v1/chat/completions`;
 
@@ -1221,6 +1223,10 @@ async function* streamFromGateway(options: GatewayOptions, accountId: string): A
   }
   // 使用 HTTP Header 传递 accountId 用于 agent 路由
   headers['X-OpenClaw-Agent-Id'] = accountId;
+  // 传递钉钉发送者用户标识到下游服务
+  if (senderId) {
+    headers['x-forwarded-user'] = senderId;
+  }
 
   log?.info?.(`[DingTalk][Gateway] POST ${gatewayUrl}, session=${sessionKey}, accountId=${accountId}, messages=${messages.length}`);
 
@@ -2497,6 +2503,7 @@ async function handleDingTalkMessage(params: {
         sessionKey,
         gatewayAuth,
         imageLocalPaths: imageLocalPaths.length > 0 ? imageLocalPaths : undefined,
+        senderId,
         log,
       })) {
         fullResponse += chunk;
@@ -2566,6 +2573,7 @@ async function handleDingTalkMessage(params: {
         sessionKey,
         gatewayAuth,
         imageLocalPaths: imageLocalPaths.length > 0 ? imageLocalPaths : undefined,
+        senderId,
         log,
       }, accountId)) {
         accumulated += chunk;
@@ -2646,6 +2654,7 @@ async function handleDingTalkMessage(params: {
         sessionKey,
         gatewayAuth,
         imageLocalPaths: imageLocalPaths.length > 0 ? imageLocalPaths : undefined,
+        senderId,
         log,
       }, accountId)) {
         fullResponse += chunk;
